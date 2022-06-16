@@ -2,8 +2,10 @@ import tkinter as tk
 import sqlite3 as sql
 
 
+
 class DataEntry:
     def __init__(self, parent, title):
+        # initializing all variables
         self.parent = parent
         self.window = tk.Toplevel()
         self.title = title
@@ -19,12 +21,12 @@ class DataEntry:
         self.row = tk.StringVar()
         self.column = tk.StringVar()
 
+        self.db = sql.connect("books.db")
+        self.cur = self.db.cursor()
         self.initialize()
         self.location_panel()
         self.buttons()
 
-
-        self.db = sql.connect("books.db")
 
     def initialize(self):
         # Set title
@@ -50,6 +52,7 @@ class DataEntry:
         head.grid(row=0, column=3)
 
         # ####################################################################################################################### 
+        # to create the various lables and text boxes and create the ui
         tk.Label(self.window, text="Book Name").grid(row=1, column=1)
         self.book_tb = tk.Entry(self.window, width=40)
         self.book_tb.grid(row=1, column=2)
@@ -70,6 +73,7 @@ class DataEntry:
         self.topic_tb = tk.Entry(self.window, width=40)
         self.topic_tb.grid(row=3, column=2, padx=10, pady=10)
 
+    # creates the row column and rack labels and boxes
     def location_panel(self):
         tk.Label(self.window, text="Location").grid(row=4, column=1, padx=10, pady=10)
 
@@ -85,6 +89,17 @@ class DataEntry:
         self.column_tb = tk.Entry(self.window, width=40)
         self.column_tb.grid(row=5, column=4, padx=10, pady=10)
 
+        self.no_of_book =tk.Label(self.window)
+        self.no_of_book.grid(row=10,column=2)
+
+        self.no_of_books=0
+        self.cur.execute("SELECT book FROM books_table")
+        for book in self.cur.fetchall():
+            self.no_of_books +=1
+        print(self.no_of_books)
+        self.no_of_book.config(text="We have total {} books in library".format(self.no_of_books))
+
+    # create the buttons and place them on the grid
     def buttons(self):
         self.submit_button = tk.Button(self.window, text="Submit", command=self.save_data)
         self.submit_button.grid(row=10, column=3, padx=10, pady=10)
@@ -92,6 +107,7 @@ class DataEntry:
         self.exit_button = tk.Button(self.window, text="Exit", command=self.window.destroy)
         self.exit_button.grid(row=10, column=4, padx=10, pady=10)
 
+    # A prompt window to be used when all mandatory data is not filled
     def prompt(self):
         self.prompt_window = tk.Toplevel()
         # set the attributes of window
@@ -110,68 +126,63 @@ class DataEntry:
         self.prompt_window.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
         self.prompt_window.resizable(False, False)
 
-        tk.Label(self.prompt_window,text="Please enter mandatory data").pack(anchor="center")
-        tk.Button(self.prompt_window,text="Close",command=self.prompt_window.destroy).pack(anchor="s")
+        tk.Label(self.prompt_window, text="Please enter mandatory data").pack(anchor="center")
+        tk.Button(self.prompt_window, text="Close", command=self.prompt_window.destroy).pack(anchor="s")
 
-
+    # A function to save the data
     def save_data(self):
+
+        # fetching data from the text boxes
         self.book_n = self.book_tb.get().lower()
-        self.book_tb.delete("0", "end")
-
         self.author = self.author_tb.get().lower()
-        self.author_tb.delete("0", "end")
-
         self.publication = self.publication_tb.get().lower()
-        self.publication_tb.delete("0", "end")
-
         self.department = self.department_tb.get().lower()
-        self.department_tb.delete("0", "end")
-
         self.topic = self.topic_tb.get().lower()
-        self.topic_tb.delete("0", "end")
-
         self.rack = self.rack_tb.get().lower()
-        self.rack_tb.delete("0", "end")
-
         self.row = self.row_tb.get().lower()
-        self.row_tb.delete("0", "end")
-
         self.column = self.column_tb.get().lower()
-        self.column_tb.delete("0", "end")
 
-        # Save data to database
-        self.c = self.db.cursor()
 
-        #get no of tables named books_table
-        self.c.execute("""SELECT count(name) FROM sqlite_master WHERE type='table' AND name='books_table'""")
-
-        if self.c.fetchone()[0]==0:
-            self.c.execute("""CREATE TABLE books_table(
+        # To check if the books_table exists if not then create one
+        self.cur.execute("""SELECT count(name) FROM sqlite_master WHERE type='table' AND name='books_table'""")
+        if self.cur.fetchone()[0] == 0:
+            self.cur.execute("""CREATE TABLE books_table(
                             book text,
                             author text,
                             publication text,
                             department text,
                             topic text,
+                            available text,
+                            id integer,
                             rack integer,
                             row integer,
                             column integer
                             )""")
             self.db.commit()
 
-        if self.book_n == '' or self.department == '' or self.rack == '' or self.row == '' or self.column == '':
+        if self.book_n == '' or self.rack == '' or self.row == '' or self.column == '':
             self.prompt()
             return
 
-        print("4")
-        self.c.execute(
-            "INSERT INTO books_table VALUES (:book,:author,:publication,:department,:topic,:rack,:row,:column)",
-            {'book': (self.book_n), 'author': self.author, 'publication': self.publication,
-             'department': self.department, 'topic': self.topic, 'rack': self.rack, 'row': self.row,
+
+        print(self.no_of_books)
+        self.no_of_book.config(text=self.no_of_books)
+        self.cur.execute(
+            "INSERT INTO books_table VALUES (:book,:author,:publication,:department,:topic,:availaible,:id,:rack,:row,"
+            ":column)",
+            {'book': self.book_n, 'author': self.author, 'publication': self.publication,
+             'department': self.department, 'topic': self.topic,'availaible':1,'id':5250+self.no_of_books, 'rack': self.rack, 'row': self.row,
              'column': self.column})
         self.db.commit()
 
-        self.c.execute("SELECT * FROM books_table WHERE topic='maths'")
-        self.db.commit()
-        print(self.c.fetchall())
+        # To clear all the text in text boxes for new data to be filled
 
+        '''self.book_tb.delete("0", "end")
+        self.author_tb.delete("0", "end")
+        self.publication_tb.delete("0", "end")
+        self.department_tb.delete("0", "end")
+        self.topic_tb.delete("0", "end")
+        self.rack_tb.delete("0", "end")
+        self.row_tb.delete("0", "end")
+        self.column_tb.delete("0", "end")'''
 
