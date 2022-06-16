@@ -5,6 +5,7 @@ import SearchWindow as se
 root = tk.Tk()
 root.withdraw()
 
+
 def welcome_window():
     welcome_win = tk.Toplevel()
 
@@ -27,18 +28,19 @@ def welcome_window():
     welcome_win.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
     welcome_win.resizable(False, False)
 
-    data_entry_button = tk.Button(welcome_win, text="Data Entry", command=data_entry).pack(pady=5,padx=10)
+    data_entry_button = tk.Button(welcome_win, text="Data Entry", command=data_entry).pack(pady=5, padx=10)
     search_window_button = tk.Button(welcome_win, text="Search Window", command=search).pack(pady=5)
     exit_button = tk.Button(welcome_win, text="Exit", command=welcome_win.quit).pack(pady=5)
-
 
 
 def data_entry():
     # create data entry window
     data_entry_win = de.DataEntry(root, "Data Entry")
 
+
 def search():
-    search_win = se.SearchWindow(root,"Search")
+    search_win = se.SearchWindow(root, "Search")
+
 
 welcome_window()
 
